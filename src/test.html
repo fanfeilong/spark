@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark.js Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        #canvas {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #333;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #2ed573; }
+        .error { background: #ff4757; }
+        .info { background: #3742fa; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spark.js Test Page</h1>
+        <div id="status" class="status info">Loading...</div>
+        <div id="canvas"></div>
+        <div>
+            <button onclick="loadButterfly()">Load Butterfly</button>
+            <button onclick="loadDragon()">Load Dragon</button>
+            <button onclick="clearScene()">Clear Scene</button>
+        </div>
+        <div id="info">
+            <h3>Test Instructions:</h3>
+            <ul>
+                <li>Click the buttons to load different 3D models</li>
+                <li>Drag with mouse to rotate the model</li>
+                <li>Check the status for loading information</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        let scene, camera, renderer, currentSplat;
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        async function initThreeJS() {
+            try {
+                updateStatus('Loading THREE.js...', 'info');
+                
+                const THREE = await import('https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js');
+                
+                updateStatus('Loading Spark.js...', 'info');
+                const { SplatMesh } = await import('https://sparkjs.dev/releases/spark/0.1.4/spark.module.js');
+                
+                updateStatus('Setting up scene...', 'info');
+                
+                // Create scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x1a1a1a);
+                
+                // Create camera
+                const container = document.getElementById('canvas');
+                const aspect = container.clientWidth / container.clientHeight;
+                camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+                camera.position.set(0, 0, 5);
+                
+                // Create renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(renderer.domElement);
+                
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 1);
+                scene.add(directionalLight);
+                
+                // Add controls
+                addControls();
+                
+                // Start animation
+                animate();
+                
+                updateStatus('Ready! Click a button to load a model.', 'success');
+                
+                // Store SplatMesh for later use
+                window.SplatMesh = SplatMesh;
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function addControls() {
+            let isMouseDown = false;
+            let mouseX = 0;
+            let mouseY = 0;
+
+            const canvas = renderer.domElement;
+
+            canvas.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (isMouseDown && currentSplat) {
+                    const deltaX = e.clientX - mouseX;
+                    const deltaY = e.clientY - mouseY;
+                    
+                    currentSplat.rotation.y += deltaX * 0.01;
+                    currentSplat.rotation.x += deltaY * 0.01;
+                    
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (currentSplat) {
+                currentSplat.rotation.y += 0.005;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        async function loadModel(url, name) {
+            try {
+                updateStatus(`Loading ${name}...`, 'info');
+                
+                // Remove current splat
+                if (currentSplat) {
+                    scene.remove(currentSplat);
+                }
+                
+                // Create new splat
+                currentSplat = new window.SplatMesh({ url });
+                currentSplat.position.set(0, 0, 0);
+                scene.add(currentSplat);
+                
+                updateStatus(`${name} loaded successfully!`, 'success');
+                
+            } catch (error) {
+                console.error('Loading error:', error);
+                updateStatus(`Error loading ${name}: ${error.message}`, 'error');
+            }
+        }
+
+        function loadButterfly() {
+            loadModel('https://sparkjs.dev/assets/splats/butterfly.spz', 'Butterfly');
+        }
+
+        function loadDragon() {
+            loadModel('https://sparkjs.dev/assets/splats/dragon.spz', 'Dragon');
+        }
+
+        function clearScene() {
+            if (currentSplat) {
+                scene.remove(currentSplat);
+                currentSplat = null;
+                updateStatus('Scene cleared.', 'info');
+            }
+        }
+
+        // Initialize when page loads
+        initThreeJS();
+        
+        // Make functions globally available
+        window.loadButterfly = loadButterfly;
+        window.loadDragon = loadDragon;
+        window.clearScene = clearScene;
+    </script>
+</body>
+</html> 

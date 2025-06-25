@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark.js Debug</title>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js",
+            "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.4/spark.module.js"
+        }
+    }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        #canvas {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #333;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #2ed573; }
+        .error { background: #ff4757; }
+        .info { background: #3742fa; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spark.js Debug Test</h1>
+        <div id="status" class="status info">Initializing...</div>
+        <div id="canvas"></div>
+        <div>
+            <button onclick="testImport()">Test Import</button>
+            <button onclick="testSplat()">Test Splat Loading</button>
+            <button onclick="clearCanvas()">Clear</button>
+        </div>
+        <div id="log"></div>
+    </div>
+
+    <script type="module">
+        let scene, camera, renderer, splatMesh;
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+
+        async function testImport() {
+            try {
+                updateStatus('Testing module imports...', 'info');
+                
+                const THREE = await import('three');
+                log('✓ THREE.js imported successfully');
+                
+                const { SplatMesh } = await import('@sparkjsdev/spark');
+                log('✓ Spark.js imported successfully');
+                
+                updateStatus('All imports successful!', 'success');
+                
+                // Store for later use
+                window.THREE = THREE;
+                window.SplatMesh = SplatMesh;
+                
+            } catch (error) {
+                log(`✗ Import error: ${error.message}`);
+                updateStatus(`Import failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSplat() {
+            try {
+                if (!window.THREE || !window.SplatMesh) {
+                    updateStatus('Please test imports first', 'error');
+                    return;
+                }
+
+                updateStatus('Setting up THREE.js scene...', 'info');
+                
+                // Create scene
+                scene = new window.THREE.Scene();
+                scene.background = new window.THREE.Color(0x1a1a1a);
+                
+                // Create camera
+                const container = document.getElementById('canvas');
+                const aspect = container.clientWidth / container.clientHeight;
+                camera = new window.THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+                camera.position.set(0, 0, 5);
+                
+                // Create renderer
+                renderer = new window.THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(renderer.domElement);
+                
+                // Add lights
+                const ambientLight = new window.THREE.AmbientLight(0x404040, 0.6);
+                scene.add(ambientLight);
+                
+                const directionalLight = new window.THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 1);
+                scene.add(directionalLight);
+                
+                log('✓ THREE.js scene created');
+                
+                updateStatus('Loading splat model...', 'info');
+                
+                // Load splat
+                const splatURL = 'https://sparkjs.dev/assets/splats/butterfly.spz';
+                splatMesh = new window.SplatMesh({ url: splatURL });
+                splatMesh.position.set(0, 0, 0);
+                scene.add(splatMesh);
+                
+                log('✓ Splat mesh created');
+                
+                // Start animation
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    if (splatMesh) {
+                        splatMesh.rotation.y += 0.01;
+                    }
+                    renderer.render(scene, camera);
+                };
+                animate();
+                
+                updateStatus('Splat loaded and animating!', 'success');
+                log('✓ Animation started');
+                
+            } catch (error) {
+                log(`✗ Splat error: ${error.message}`);
+                updateStatus(`Splat failed: ${error.message}`, 'error');
+            }
+        }
+
+        function clearCanvas() {
+            const container = document.getElementById('canvas');
+            container.innerHTML = '';
+            scene = null;
+            camera = null;
+            renderer = null;
+            splatMesh = null;
+            updateStatus('Canvas cleared', 'info');
+        }
+
+        // Make functions globally available
+        window.testImport = testImport;
+        window.testSplat = testSplat;
+        window.clearCanvas = clearCanvas;
+
+        // Initialize
+        updateStatus('Ready for testing', 'info');
+    </script>
+</body>
+</html> 

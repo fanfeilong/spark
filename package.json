@@ -1,0 +1,40 @@
+{
+  "name": "spark-js-demos",
+  "version": "1.0.0",
+  "description": "Interactive demos showcasing Spark.js 3D Gaussian Splatting renderer",
+  "main": "src/index.html",
+  "scripts": {
+    "start": "npx http-server src -p 3000 -o",
+    "dev": "npx live-server src --port=3000 --open=/index.html",
+    "build": "echo 'Static site build would go here'",
+    "test": "echo 'Tests would go here'",
+    "lint": "echo 'Linting would go here'"
+  },
+  "keywords": [
+    "spark.js",
+    "3d",
+    "gaussian-splatting",
+    "three.js",
+    "webgl",
+    "rendering",
+    "demos",
+    "interactive"
+  ],
+  "author": "Spark.js Team",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sparkjsdev/spark.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sparkjsdev/spark/issues"
+  },
+  "homepage": "https://sparkjs.dev",
+  "dependencies": {
+    "three": "^0.174.0"
+  }
+}

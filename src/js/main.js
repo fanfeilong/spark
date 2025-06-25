@@ -9,6 +9,7 @@ class SparkDemoApp {
         this.camera = null;
         this.renderer = null;
         this.hasRunDemo = false; // Track if we've run a demo before
+        this.isAIInterface = false; // Track if we're using AI interface
         this.init();
     }
 
@@ -414,8 +415,8 @@ class SparkDemoApp {
     cleanupDemo() {
         console.log('🧹 Cleaning up demo...');
         
-        // Stop animation loop first
-        if (this.renderer) {
+        // Stop animation loop first (but not for AI interface, it has its own loop)
+        if (this.renderer && !this.isAIInterface) {
             this.renderer.setAnimationLoop(null);
             console.log('⏹️ Animation loop stopped');
         }
@@ -509,17 +510,204 @@ class SparkDemoApp {
             }, 300);
         }, 3000);
     }
+
+    // Method for AI interface to load demo directly into a specific canvas
+    async loadDemoById(demoId, canvas) {
+        this.isAIInterface = true;
+        try {
+            console.log(`🤖 AI Loading demo: ${demoId} into custom canvas`);
+            
+            // Clean up any existing demo
+            this.cleanupDemo();
+            
+            // Create container div for the canvas
+            const container = canvas.parentElement;
+            
+            // Initialize demo directly
+            await this.initializeDemoInCanvas(demoId, canvas, container);
+            
+            return true;
+        } catch (error) {
+            console.error('Failed to load demo for AI interface:', error);
+            return false;
+        }
+    }
+
+    // Initialize demo in a specific canvas (for AI interface)
+    async initializeDemoInCanvas(demoId, canvas, container) {
+        console.log(`🎨 Initializing ${demoId} in AI canvas`);
+        
+        // Set up Three.js with the provided canvas
+        this.scene = new THREE.Scene();
+        
+        // Set up camera
+        this.camera = new THREE.PerspectiveCamera(
+            60,
+            container.clientWidth / container.clientHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.set(0, 0, 5);
+        
+        // Set up renderer with the provided canvas
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha: true
+        });
+        
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+        this.renderer.setClearColor(0x000000, 1);
+        
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1);
+        this.scene.add(directionalLight);
+        
+        // Wait for WASM to be ready (critical for Spark.js)
+        if (typeof SplatMesh.staticInitialized !== 'undefined') {
+            console.log('⏳ Waiting for Spark.js WASM to initialize...');
+            await SplatMesh.staticInitialized;
+            console.log('✅ Spark.js WASM initialized');
+        } else {
+            console.log('⚠️ SplatMesh.staticInitialized not found, proceeding anyway');
+        }
+        
+        // Create and add splat meshes
+        const splatMeshes = await this.createSplatMeshes(demoId);
+        splatMeshes.forEach(mesh => this.scene.add(mesh));
+        
+        // Add controls for AI interface
+        this.addControlsForAI();
+        
+        // Start render loop
+        this.startRenderLoop();
+        
+        // Handle resize
+        this.handleResizeForAI(container);
+        
+        // Store current demo info
+        this.currentDemo = {
+            id: demoId,
+            container: container,
+            canvas: canvas,
+            splatMeshes: splatMeshes,
+            resetCamera: () => {
+                this.camera.position.set(0, 0, 5);
+                this.camera.lookAt(0, 0, 0);
+            }
+        };
+        
+        console.log(`✅ Successfully initialized ${demoId} for AI interface`);
+    }
+
+    // Add controls specifically for AI interface
+    addControlsForAI() {
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        
+        const canvas = this.renderer.domElement;
+        
+        const onMouseDown = (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        };
+        
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            
+            const deltaMove = {
+                x: e.clientX - previousMousePosition.x,
+                y: e.clientY - previousMousePosition.y
+            };
+            
+            // Rotate camera around the scene
+            const rotationSpeed = 0.005;
+            this.camera.position.x = this.camera.position.x * Math.cos(deltaMove.x * rotationSpeed) - this.camera.position.z * Math.sin(deltaMove.x * rotationSpeed);
+            this.camera.position.z = this.camera.position.x * Math.sin(deltaMove.x * rotationSpeed) + this.camera.position.z * Math.cos(deltaMove.x * rotationSpeed);
+            
+            this.camera.lookAt(0, 0, 0);
+            
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        };
+        
+        const onMouseUp = () => {
+            isDragging = false;
+        };
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', onMouseDown);
+        canvas.addEventListener('mousemove', onMouseMove);
+        canvas.addEventListener('mouseup', onMouseUp);
+        canvas.addEventListener('mouseleave', onMouseUp);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                onMouseDown({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
+            }
+        }, { passive: false });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                onMouseMove({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
+            }
+        }, { passive: false });
+        
+        canvas.addEventListener('touchend', onMouseUp);
+    }
+
+    // Handle resize for AI interface
+    handleResizeForAI(container) {
+        const resizeObserver = new ResizeObserver(() => {
+            if (this.camera && this.renderer) {
+                this.camera.aspect = container.clientWidth / container.clientHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
+        
+        resizeObserver.observe(container);
+    }
+
+    // Start render loop
+    startRenderLoop() {
+        const animate = () => {
+            requestAnimationFrame(animate);
+            
+            if (this.scene && this.camera && this.renderer) {
+                // Auto-rotate objects slightly
+                if (this.currentDemo && this.currentDemo.splatMeshes) {
+                    this.currentDemo.splatMeshes.forEach(mesh => {
+                        mesh.rotation.y += 0.005;
+                    });
+                }
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+        };
+        
+        animate();
+    }
 }
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    window.SparkDemoApp = SparkDemoApp; // Export class for AI interface
     window.sparkDemoApp = new SparkDemoApp();
     
     // Check for auto-open after refresh
     window.sparkDemoApp.checkAutoOpenDemo();
     
-    // Show welcome notification
-    setTimeout(() => {
-        window.sparkDemoApp.showNotification('Welcome to Spark.js Demos! 🚀', 'success');
-    }, 1000);
+    // Show welcome notification only if not AI interface
+    if (window.location.hash !== '#create') {
+        setTimeout(() => {
+            window.sparkDemoApp.showNotification('Welcome to Spark.js Demos! 🚀', 'success');
+        }, 1000);
+    }
 }); 

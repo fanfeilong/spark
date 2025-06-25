@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spark.js - 3D Gaussian Splatting Demos</title>
+    <title>Spark AI Studio - Create 3D with Natural Language</title>
     <link rel="stylesheet" href="styles/main.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script type="importmap">
@@ -19,87 +19,169 @@
     <div id="app">
         <header class="header">
             <div class="container">
-                <h1 class="logo">⚡ Spark.js</h1>
+                <h1 class="logo">🚀 Spark AI Studio</h1>
                 <nav class="nav">
-                    <a href="#home" class="nav-link active">Home</a>
-                    <a href="#demos" class="nav-link">Demos</a>
-                    <a href="#features" class="nav-link">Features</a>
-                    <a href="#docs" class="nav-link">Documentation</a>
+                    <a href="#create" class="nav-link active">Create</a>
+                    <a href="#gallery" class="nav-link">Gallery</a>
+                    <a href="#examples" class="nav-link">Examples</a>
+                    <a href="#about" class="nav-link">About</a>
                 </nav>
+                <div class="header-actions">
+                    <button class="btn btn-outline" id="helpBtn">?</button>
+                    <button class="btn btn-primary" id="loginBtn">Sign In</button>
+                </div>
             </div>
         </header>
 
         <main class="main">
-            <section id="home" class="hero">
-                <div class="container">
-                    <div class="hero-content">
-                        <h2 class="hero-title">Advanced 3D Gaussian Splatting</h2>
-                        <p class="hero-subtitle">High-performance 3D Gaussian Splatting renderer for THREE.js with real-time editing and animation capabilities</p>
-                        <div class="hero-buttons">
-                            <button class="btn btn-primary" id="viewDemosBtn">View Demos</button>
-                            <button class="btn btn-secondary" id="getStartedBtn">Get Started</button>
+            <!-- AI Creation Interface -->
+            <section id="create" class="ai-studio">
+                <div class="studio-container">
+                    <!-- Left Panel: AI Chat Interface -->
+                    <div class="chat-panel">
+                        <div class="chat-header">
+                            <h2>🤖 AI Creative Assistant</h2>
+                            <p>Describe what you want to create in 3D</p>
+                        </div>
+                        
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="message ai-message">
+                                <div class="avatar">🤖</div>
+                                <div class="content">
+                                    <p>Hi! I'm your AI 3D creation assistant. Tell me what you'd like to create and I'll help bring it to life using Spark.js Gaussian Splatting.</p>
+                                    <div class="suggestions">
+                                        <span class="suggestion-chip" data-prompt="Create a beautiful butterfly with colorful wings">🦋 Colorful Butterfly</span>
+                                        <span class="suggestion-chip" data-prompt="Show me a cozy fireplace scene">🔥 Cozy Fireplace</span>
+                                        <span class="suggestion-chip" data-prompt="Create a futuristic robot character">🤖 Robot Character</span>
+                                        <span class="suggestion-chip" data-prompt="Generate a mystical forest landscape">🌲 Mystical Forest</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-container">
+                            <div class="input-actions">
+                                <button class="action-btn" id="voiceBtn" title="Voice Input">🎤</button>
+                                <button class="action-btn" id="imageBtn" title="Upload Reference">📷</button>
+                                <button class="action-btn" id="magicBtn" title="AI Suggestions">✨</button>
+                            </div>
+                            <div class="chat-input">
+                                <textarea 
+                                    id="promptInput" 
+                                    placeholder="Describe your 3D creation... (e.g., 'Create a dragon breathing fire' or 'Show me a cat playing with yarn')"
+                                    rows="3"
+                                ></textarea>
+                                <button class="send-btn" id="sendBtn">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="hero-visual">
-                        <div class="spark-animation">
-                            <div class="spark-particle"></div>
-                            <div class="spark-particle"></div>
-                            <div class="spark-particle"></div>
+
+                    <!-- Right Panel: 3D Viewport -->
+                    <div class="viewport-panel">
+                        <div class="viewport-header">
+                            <div class="viewport-title">
+                                <h3>3D Preview</h3>
+                                <span class="status-indicator" id="statusIndicator">Ready</span>
+                            </div>
+                            <div class="viewport-controls">
+                                <button class="control-btn" id="resetViewBtn" title="Reset View">🏠</button>
+                                <button class="control-btn" id="fullscreenBtn" title="Fullscreen">⛶</button>
+                                <button class="control-btn" id="shareBtn" title="Share">📤</button>
+                                <button class="control-btn" id="downloadBtn" title="Download">💾</button>
+                            </div>
+                        </div>
+                        
+                        <div class="viewport-container" id="viewportContainer">
+                            <div class="welcome-state" id="welcomeState">
+                                <div class="welcome-icon">🎨</div>
+                                <h3>Ready to Create!</h3>
+                                <p>Describe what you want to see in 3D and watch it come to life</p>
+                                <div class="example-prompts">
+                                    <small>Try: "Show me a beautiful flower" or "Create a spaceship"</small>
+                                </div>
+                            </div>
+                            
+                            <div class="loading-state hidden" id="loadingState">
+                                <div class="ai-thinking">
+                                    <div class="thinking-animation">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <p>AI is creating your 3D scene...</p>
+                                    <div class="progress-steps">
+                                        <div class="step active">🧠 Understanding</div>
+                                        <div class="step">🎨 Generating</div>
+                                        <div class="step">⚡ Rendering</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <canvas id="threeCanvas" class="hidden"></canvas>
+                        </div>
+                        
+                        <div class="viewport-footer">
+                            <div class="generation-info" id="generationInfo">
+                                <span class="info-item">
+                                    <small>Model: </small>
+                                    <span id="currentModel">-</span>
+                                </span>
+                                <span class="info-item">
+                                    <small>Quality: </small>
+                                    <span id="currentQuality">High</span>
+                                </span>
+                                <span class="info-item">
+                                    <small>Render Time: </small>
+                                    <span id="renderTime">-</span>
+                                </span>
+                            </div>
+                            
+                            <div class="quick-actions" id="quickActions">
+                                <button class="quick-btn" id="regenerateBtn">🔄 Regenerate</button>
+                                <button class="quick-btn" id="variantBtn">🎲 Variant</button>
+                                <button class="quick-btn" id="enhanceBtn">✨ Enhance</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="features" class="features">
+            <!-- Gallery Section -->
+            <section id="gallery" class="gallery hidden">
                 <div class="container">
-                    <h2 class="section-title">Key Features</h2>
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">🎯</div>
-                            <h3>THREE.js Integration</h3>
-                            <p>Seamlessly integrates with THREE.js rendering pipeline to fuse splat and mesh-based objects</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">📱</div>
-                            <h3>Cross-Platform</h3>
-                            <p>Works across almost all devices, targeting 98%+ WebGL2 support, even on low-powered mobile devices</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🎨</div>
-                            <h3>Multiple Formats</h3>
-                            <p>Supports major splat file formats including .PLY, .SPZ, .SPLAT, .KSPLAT with compression</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">⚡</div>
-                            <h3>Real-time Editing</h3>
-                            <p>Dynamic splat transformation, color editing, displacement, and skeletal animation</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🔧</div>
-                            <h3>Shader Graph System</h3>
-                            <p>Dynamically create and edit splats on the GPU with advanced shader capabilities</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">👁️</div>
-                            <h3>Multi-View Rendering</h3>
-                            <p>Render multiple viewpoints simultaneously with correct sorting and blending</p>
-                        </div>
+                    <h2 class="section-title">Community Gallery</h2>
+                    <div class="gallery-filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="characters">Characters</button>
+                        <button class="filter-btn" data-filter="scenes">Scenes</button>
+                        <button class="filter-btn" data-filter="objects">Objects</button>
+                        <button class="filter-btn" data-filter="abstract">Abstract</button>
+                    </div>
+                    <div class="gallery-grid" id="galleryGrid">
+                        <!-- Gallery items will be populated dynamically -->
                     </div>
                 </div>
             </section>
 
-            <section id="demos" class="demos">
+            <!-- Examples Section (Existing demos) -->
+            <section id="examples" class="examples hidden">
                 <div class="container">
-                    <h2 class="section-title">Interactive Demos</h2>
+                    <h2 class="section-title">Technical Examples</h2>
+                    <p class="section-subtitle">Explore Spark.js capabilities with these interactive demonstrations</p>
                     <div class="demos-grid">
                         <div class="demo-card" data-demo="basic-butterfly">
                             <div class="demo-preview">
                                 <div class="demo-placeholder">🦋</div>
                             </div>
                             <div class="demo-content">
-                                <h3>Basic Butterfly</h3>
-                                <p>Simple rotating butterfly splat with THREE.js integration</p>
-                                <button class="btn btn-primary demo-btn">Launch Demo</button>
+                                <h3>Butterfly Splat</h3>
+                                <p>Basic Gaussian Splatting demonstration</p>
+                                <button class="btn btn-primary demo-btn">View Demo</button>
                             </div>
                         </div>
                         
@@ -108,122 +190,79 @@
                                 <div class="demo-placeholder">🤖</div>
                             </div>
                             <div class="demo-content">
-                                <h3>Multiple Robot Heads</h3>
-                                <p>Multiple robot head instances with different transformations</p>
-                                <button class="btn btn-primary demo-btn">Launch Demo</button>
+                                <h3>Multi-Object Scene</h3>
+                                <p>Multiple splat objects in one scene</p>
+                                <button class="btn btn-primary demo-btn">View Demo</button>
                             </div>
                         </div>
                         
                         <div class="demo-card" data-demo="color-editing">
                             <div class="demo-preview">
-                                <div class="demo-placeholder">🐱</div>
+                                <div class="demo-placeholder">🎨</div>
                             </div>
                             <div class="demo-content">
-                                <h3>Cat Color Editing</h3>
-                                <p>Interactive cat model with enhanced lighting and color effects</p>
-                                <button class="btn btn-primary demo-btn">Launch Demo</button>
-                            </div>
-                        </div>
-                        
-                        <div class="demo-card" data-demo="animation">
-                            <div class="demo-preview">
-                                <div class="demo-placeholder">🔥</div>
-                            </div>
-                            <div class="demo-content">
-                                <h3>Forge Animation</h3>
-                                <p>Dynamic forge model with complex transformations and animations</p>
-                                <button class="btn btn-primary demo-btn">Launch Demo</button>
-                            </div>
-                        </div>
-                        
-                        <div class="demo-card" data-demo="shader-graph">
-                            <div class="demo-preview">
-                                <div class="demo-placeholder">🏔️</div>
-                            </div>
-                            <div class="demo-content">
-                                <h3>Valley Shader</h3>
-                                <p>Valley landscape with fog effects and shader-based rendering</p>
-                                <button class="btn btn-primary demo-btn">Launch Demo</button>
-                            </div>
-                        </div>
-                        
-                        <div class="demo-card" data-demo="multi-view">
-                            <div class="demo-preview">
-                                <div class="demo-placeholder">🔥</div>
-                            </div>
-                            <div class="demo-content">
-                                <h3>Fireplace Multi-View</h3>
-                                <p>Cozy fireplace scene with multi-viewpoint rendering</p>
-                                <button class="btn btn-primary demo-btn">Launch Demo</button>
-                            </div>
-                        </div>
-                        
-                        <div class="demo-card" data-demo="food-gallery">
-                            <div class="demo-preview">
-                                <div class="demo-placeholder">🍔</div>
-                            </div>
-                            <div class="demo-content">
-                                <h3>Food Gallery</h3>
-                                <p>Delicious food models with realistic lighting and materials</p>
-                                <button class="btn btn-primary demo-btn">Launch Demo</button>
+                                <h3>Interactive Editing</h3>
+                                <p>Real-time color and transformation editing</p>
+                                <button class="btn btn-primary demo-btn">View Demo</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="docs" class="docs">
+            <!-- About Section -->
+            <section id="about" class="about hidden">
                 <div class="container">
-                    <h2 class="section-title">Quick Start</h2>
-                    <div class="docs-content">
-                        <div class="code-example">
-                            <h3>Basic Setup</h3>
-                            <div class="code-block">
-<pre><code>&lt;script type="importmap"&gt;
-{
-  "imports": {
-    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js",
-    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.4/spark.module.js"
-  }
-}
-&lt;/script&gt;
-&lt;script type="module"&gt;
-import * as THREE from "three";
-import { SplatMesh } from "@sparkjsdev/spark";
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const splatURL = "https://sparkjs.dev/assets/splats/butterfly.spz";
-const butterfly = new SplatMesh({ url: splatURL });
-butterfly.position.set(0, 0, -3);
-scene.add(butterfly);
-
-renderer.setAnimationLoop(function animate(time) {
-  renderer.render(scene, camera);
-  butterfly.rotation.y += 0.01;
-});
-&lt;/script&gt;</code></pre>
+                    <div class="about-content">
+                        <div class="about-text">
+                            <h2>The Future of 3D Creation</h2>
+                            <p>Spark AI Studio combines the power of <strong>Spark.js Gaussian Splatting</strong> with <strong>Large Language Models</strong> to create the most intuitive 3D creation experience ever built.</p>
+                            
+                            <div class="tech-stack">
+                                <h3>Powered By</h3>
+                                <div class="tech-items">
+                                    <div class="tech-item">
+                                        <strong>Spark.js</strong>
+                                        <p>Advanced 3D Gaussian Splatting renderer</p>
+                                    </div>
+                                    <div class="tech-item">
+                                        <strong>AI/LLM</strong>
+                                        <p>Natural language understanding (Coming Soon)</p>
+                                    </div>
+                                    <div class="tech-item">
+                                        <strong>WebGL</strong>
+                                        <p>High-performance browser rendering</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="roadmap-preview">
+                                <h3>Development Roadmap</h3>
+                                <div class="roadmap-items">
+                                    <div class="roadmap-item completed">✅ Interactive 3D Demos</div>
+                                    <div class="roadmap-item current">🚧 AI Chat Interface</div>
+                                    <div class="roadmap-item">📋 Natural Language 3D Generation</div>
+                                    <div class="roadmap-item">📋 Real-time Style Transfer</div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="installation">
-                            <h3>Installation</h3>
-                            <div class="install-options">
-                                <div class="install-option">
-                                    <h4>NPM</h4>
-                                    <code>npm install @sparkjsdev/spark</code>
+                        <div class="about-visual">
+                            <div class="feature-showcase">
+                                <div class="showcase-item">
+                                    <div class="showcase-icon">💬</div>
+                                    <h4>Natural Language</h4>
+                                    <p>"Create a dragon" → Beautiful 3D model</p>
                                 </div>
-                                <div class="install-option">
-                                    <h4>CDN</h4>
-                                    <p>Use the import map above for CDN access</p>
+                                <div class="showcase-item">
+                                    <div class="showcase-icon">⚡</div>
+                                    <h4>Real-time Generation</h4>
+                                    <p>Watch your ideas come to life instantly</p>
                                 </div>
-                                <div class="install-option">
-                                    <h4>Web Editor</h4>
-                                    <a href="https://glitch.com/edit/#!/sparkjs-dev" target="_blank">Remix on Glitch</a>
+                                <div class="showcase-item">
+                                    <div class="showcase-icon">🎨</div>
+                                    <h4>Interactive Editing</h4>
+                                    <p>Refine and perfect with AI assistance</p>
                                 </div>
                             </div>
                         </div>
@@ -235,29 +274,37 @@ renderer.setAnimationLoop(function animate(time) {
         <footer class="footer">
             <div class="container">
                 <div class="footer-content">
-                    <div class="footer-section">
-                        <h4>Spark.js</h4>
-                        <p>Advanced 3D Gaussian Splatting renderer for THREE.js</p>
+                    <div class="footer-info">
+                        <h3>Spark AI Studio</h3>
+                        <p>Pioneering the future of AI-powered 3D creation. Built with Spark.js by independent developers.</p>
                     </div>
-                    <div class="footer-section">
-                        <h4>Links</h4>
-                        <a href="https://sparkjs.dev/" target="_blank">Documentation</a>
-                        <a href="https://github.com/sparkjsdev/spark" target="_blank">GitHub</a>
-                        <a href="https://www.npmjs.com/package/@sparkjsdev/spark" target="_blank">NPM</a>
-                    </div>
-                    <div class="footer-section">
-                        <h4>License</h4>
-                        <p>MIT License</p>
+                    <div class="footer-links">
+                        <div class="link-group">
+                            <h4>Project</h4>
+                            <ul>
+                                <li><a href="https://github.com/fanfeilong/spark" target="_blank" rel="noopener">GitHub</a></li>
+                                <li><a href="#" id="feedbackLink">Feedback</a></li>
+                                <li><a href="#" id="contributeLink">Contribute</a></li>
+                            </ul>
+                        </div>
+                        <div class="link-group">
+                            <h4>Resources</h4>
+                            <ul>
+                                <li><a href="https://sparkjs.dev/" target="_blank" rel="noopener">Spark.js</a></li>
+                                <li><a href="#" id="docsLink">Documentation</a></li>
+                                <li><a href="#" id="tutorialsLink">Tutorials</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="footer-bottom">
-                    <p>&copy; 2024 Spark.js. Built with ⚡ and ❤️</p>
+                    <p>&copy; 2024 Independent Developers. Not affiliated with official Spark.js team. Made with ❤️ for the 3D community.</p>
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- Demo Modal -->
+    <!-- Demo Modal (for technical examples) -->
     <div id="demoModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -265,11 +312,42 @@ renderer.setAnimationLoop(function animate(time) {
                 <button class="modal-close" id="modalClose">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="demoContainer"></div>
+                <div id="demoContainer" class="demo-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>How to Use Spark AI Studio</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-content">
+                    <div class="help-section">
+                        <h4>🎯 Getting Started</h4>
+                        <p>Simply describe what you want to create in the chat box. Be as detailed or as simple as you like!</p>
+                    </div>
+                    <div class="help-section">
+                        <h4>💡 Tips for Better Results</h4>
+                        <ul>
+                            <li>Use descriptive language: "a majestic golden dragon with emerald eyes"</li>
+                            <li>Specify style: "cartoon style", "realistic", "abstract"</li>
+                            <li>Mention lighting: "sunset lighting", "neon glow", "soft ambient light"</li>
+                        </ul>
+                    </div>
+                    <div class="help-section">
+                        <h4>🛠️ Current Capabilities</h4>
+                        <p>Currently showcasing Spark.js rendering. AI generation features are in development.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/ai-interface.js"></script>
 </body>
 </html> 
